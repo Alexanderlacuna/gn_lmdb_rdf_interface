@@ -40,8 +40,9 @@ This will create:
 *** Development mode
 
 #+BEGIN_SRC sh
-export LMDB_PATH=/path/to/lmdb_data
-python app.py
+guix shell python-flask  python-lmdb 
+  export LMDB_PATH=/path/to/lmdb_data
+  python app.py
 #+END_SRC
 
 ** API Endpoints
