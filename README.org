@@ -1,0 +1,165 @@
+* Phenotype REST API
+
+A Flask REST API for serving phenotype data from LMDB storage.
+
+** Features
+
+- Fast single-trait lookups via byte-offset slicing
+- Support for standard error (SE) data
+- RESTful endpoint: =/dataset/phenotype/<dataset>_<trait_id>=
+
+** Installation
+
+We use [[https://guix.gnu.org/][GNU Guix]] to manage dependencies.
+
+*** Getting script dependencies
+
+#+BEGIN_SRC sh
+# TODO: Split SQL logic from the script logic
+guix shell \
+  python-wrapper \
+  python-lmdb \
+  python-mysqldb-connector \
+  python-numpy
+#+END_SRC
+
+*** Dumping data from MariaDB to LMDB (example)
+
+#+BEGIN_SRC sh
+python dump_phenos_matrix.py dump-phenotypes \
+  "mysql://user:password@localhost/db_webqtl" \
+  /path/to/lmdb_data
+#+END_SRC
+
+This will create:
+
+- =pheno_matrix= — trait values (rows = traits, columns = strains)
+- =pheno_se_matrix= — standard errors (if available in the =PublishSE= table)
+- =pheno_metadata= — trait list, strain list, and shape metadata
+
+** API Server
+
+*** Development mode
+
+#+BEGIN_SRC sh
+export LMDB_PATH=/path/to/lmdb_data
+python app.py
+#+END_SRC
+
+** API Endpoints
+
+*** Get phenotype values
+
+#+BEGIN_EXAMPLE
+GET /dataset/phenotype/<dataset>_<trait_id>
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+curl http://localhost:5000/dataset/phenotype/BXDPublish_1007
+#+END_SRC
+
+#+BEGIN_SRC json
+{
+  "BXD1": 5.67,
+  "BXD2": 4.32,
+  "BXD3": null,
+  "BXD5": 6.21
+}
+#+END_SRC
+
+**** Query parameters
+
+- =format=compact= — return only non-null values
+
+**** Compact example
+
+#+BEGIN_SRC sh
+curl "http://localhost:5000/dataset/phenotype/BXDPublish_12315?format=compact"
+#+END_SRC
+
+Returns only strains with data:
+
+#+BEGIN_SRC json
+{
+  "BXD1": 5.67,
+  "BXD2": 4.32,
+  "BXD5": 6.21
+}
+#+END_SRC
+
+*** Get phenotype values with standard errors
+
+#+BEGIN_EXAMPLE
+GET /dataset/phenotype/<dataset>_<trait_id>/se
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+curl http://localhost:5000/dataset/phenotype/BXDPublish_12315/se
+#+END_SRC
+
+#+BEGIN_SRC json
+{
+  "BXD1": {"value": 5.67, "se": 0.12},
+  "BXD2": {"value": 4.32, "se": 0.15},
+  "BXD3": {"value": null, "se": null},
+  "BXD5": {"value": 6.21, "se": 0.09}
+}
+#+END_SRC
+
+*** List all available traits
+
+#+BEGIN_EXAMPLE
+GET /datasets/<dataset>/traits
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+curl "http://localhost:5000/datasets/BXDPublish/traits?limit=10&offset=0"
+#+END_SRC
+
+#+BEGIN_SRC json
+{
+  "dataset": "BXDPublish",
+  "traits": ["10001", "10002", "10003"],
+  "total": 5432,
+  "limit": 10,
+  "offset": 0
+}
+#+END_SRC
+
+*** Get available strains for a trait
+
+#+BEGIN_EXAMPLE
+GET /dataset/phenotype/<dataset>_<trait_id>/strains
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+curl http://localhost:5000/dataset/phenotype/BXDPublish_12315/strains
+#+END_SRC
+
+#+BEGIN_SRC json
+{
+  "strains": ["BXD1", "BXD2", "BXD3"],
+  "count": 150
+}
+#+END_SRC
+
+** CLI Tools
+
+#+BEGIN_SRC sh
+# List all traits
+python run.py list-traits /path/to/lmdb_data
+
+# Fetch a single trait
+python run.py fetch-trait /path/to/lmdb_data 12315
+
+# Fetch as JSON
+python run.py fetch-trait /path/to/lmdb_data 12315 --json
+
+# Print the full phenotype matrix (debugging)
+python run.py print-phenotype-matrix /path/to/lmdb_data
+
+# Round-trip sanity check
+python run.py sanity-check \
+  "mysql://user:password@localhost/db_webqtl" \
+  /path/to/lmdb_data
+#+END_SRC
