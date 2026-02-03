@@ -1,6 +1,7 @@
-* Phenotype REST API
+* Genenetwork Lmdb
 
-A Flask REST API for serving phenotype data from LMDB storage.
+This is provides a rest api and cli tooling  for serving phenotype data from LMDB storage.
+:NOTE: Currently only limited to BXDPublish 
 
 Main  endpoint: =/dataset/phenotype/<dataset>_<trait_id>=
 : example curl http://localhost:5000/dataset/phenotype/BXDPublish_10007
