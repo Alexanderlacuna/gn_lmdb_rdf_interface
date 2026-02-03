@@ -2,11 +2,8 @@
 
 A Flask REST API for serving phenotype data from LMDB storage.
 
-** Features
-
-- Fast single-trait lookups via byte-offset slicing
-- Support for standard error (SE) data
-- RESTful endpoint: =/dataset/phenotype/<dataset>_<trait_id>=
+Main  endpoint: =/dataset/phenotype/<dataset>_<trait_id>=
+: example curl http://localhost:5000/dataset/phenotype/BXDPublish_10007
 
 ** Installation
 
