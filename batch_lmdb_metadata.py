@@ -558,9 +558,6 @@ def prepare_and_dump(
     )
 
     probeset = build_probeset_matrix(datasets, se_data, trait_names, strains)
-
-    lmdb_path = os.path.join(
-        lmdb_path, dataset_info.name)
     write_to_lmdb(lmdb_path, serialize(probeset, dataset_info))
 
     return probeset
@@ -659,6 +656,7 @@ def dump_dataset_cmd(
             --batch-size 5000 \\
             --workers 4
     """
+    # rework on this for path to be full i.e /lmdb_path/dataset_name
     prepare_and_dump(dataset_id, sql_uri, lmdb_path, batch_size, workers)
 
 
